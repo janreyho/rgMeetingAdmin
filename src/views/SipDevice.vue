@@ -246,24 +246,42 @@
 
       <!-- 设备列表（带展开折叠） -->
 <el-table 
+  ref="gbTableRef"
   :data="gbDeviceList" 
+  :key="tableKey"
   border 
   stripe 
   style="width: 100%;"
+  :row-key="row => row.id"
   @expand-change="handleDeviceExpand"
 >
   <!-- 1. 自定义展开列（加号/减号）【标准标签写法】 -->
-  <el-table-column width="50">
+  <!-- <el-table-column type="expand" width="60">
     <template #default="scope">
       <div class="expand-icon" @click.stop="toggleExpand(scope.row)">
         <i class="el-icon-plus" v-if="!scope.row.expanded"></i>
         <i class="el-icon-minus" v-else></i>
       </div>
     </template>
-  </el-table-column>
+  </el-table-column> -->
 
   <!-- 2. 设备基础列 -->
-  <el-table-column prop="deviceName" label="设备名称" width="180"></el-table-column>
+  <!-- <el-table-column prop="deviceName" label="设备名称" width="180"></el-table-column> -->
+
+
+  <el-table-column prop="deviceName" label="设备名称" width="220"> 
+    <template #default="scope">
+      <div class="device-name-wrap">
+        <div class="expand-icon" @click.stop="toggleExpand(scope.row)">
+          <i class="el-icon-plus" v-if="!scope.row.expanded"></i>
+          <i class="el-icon-minus" v-else></i>
+        </div>
+        <span class="device-name-text">{{ scope.row.deviceName || '未命名设备' }}</span>
+      </div>
+    </template>
+  </el-table-column>
+
+
   <el-table-column prop="deviceId" label="设备id" width="220"></el-table-column>
   <el-table-column prop="gatewayId" label="设备网关id" width="180"></el-table-column>
   <el-table-column prop="status" label="状态" width="120">
@@ -320,18 +338,32 @@
         label-width="120px" 
         ref="channelFormRef"
       >
-        <el-form-item label="*通道名称" prop="channelName">
+        <el-form-item label="通道名称" prop="channelName">
           <el-input 
             v-model="channelForm.channelName" 
             placeholder="请输入通道名称"
           ></el-input>
         </el-form-item>
-        <el-form-item label="*通道id" prop="channelId">
-          <el-input 
-            v-model="channelForm.channelId" 
-            placeholder="请输入20位通道ID"
-          ></el-input>
-        </el-form-item>
+        <el-form-item label="通道id" prop="channelId">
+  <el-row :gutter="10"> <!-- 用Row/Col实现输入框+按钮布局 -->
+    <el-col :span="18">
+      <el-input 
+        v-model="channelForm.channelId" 
+        placeholder="自动生成通道id" 
+        readonly
+      ></el-input>
+    </el-col>
+    <el-col :span="6">
+      <el-button 
+        type="primary" 
+        plain 
+        @click="generateChannelId"
+      >
+        自动生成
+      </el-button>
+    </el-col>
+  </el-row>
+</el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="channelDialogVisible = false">取消</el-button>
@@ -1043,6 +1075,8 @@ const getRtspList = async () => {
 const gbSearchForm = ref({ keyword: '' })
 // 设备列表：新增expanded（展开状态）、channels（通道列表）属性
 const gbDeviceList = ref([])
+const tableKey = ref(0) // 初始值0，每次更新数据时+1
+const gbTableRef = ref(null)
 
 const platformInfoVisible = ref(false)
 const platformInfo = ref({
@@ -1101,23 +1135,71 @@ const channelFormRules = ref({
   ]
 })
 
-// 1. 切换设备展开/折叠（加号变减号）
+// 新增：生成通道ID
+const generateChannelId = () => {
+  const prefix = '3402000000' 
+  const random = Math.floor(Math.random() * 10000000000).toString().padStart(10, '0')
+  channelForm.value.channelId = prefix + random
+}
+
+// // 1. 切换设备展开/折叠（加号变减号）
+// const toggleExpand = (row) => {
+//   row.expanded = !row.expanded; // 切换展开状态（加号↔减号）
+//   // 首次展开加载通道数据（确保通道列表显示正确）
+//   if (row.expanded && row.channels.length === 0) {
+//     // 真实场景替换为接口请求：await getGb28181Channels(row.id)
+//     row.channels = [
+//       { id: Date.now() - 100, channelName: `${row.deviceName}-通道1`, channelId: row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) },
+//       { id: Date.now() - 200, channelName: `${row.deviceName}-通道2`, channelId: row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) }
+//     ];
+//   }
+// };
+
+// 1. 切换设备展开/折叠（简化版）
 const toggleExpand = (row) => {
-  row.expanded = !row.expanded; // 切换展开状态（加号↔减号）
-  // 首次展开加载通道数据（确保通道列表显示正确）
-  if (row.expanded && row.channels.length === 0) {
-    // 真实场景替换为接口请求：await getGb28181Channels(row.id)
+  // 1. 切换展开状态（响应式更新）
+  row.expanded = !row.expanded;
+
+  // 2. 首次展开加载通道数据（不变）
+  if (row.expanded && (!row.channels || row.channels.length === 0)) {
     row.channels = [
-      { id: Date.now() - 100, channelName: `${row.deviceName}-通道1`, channelId: row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) },
-      { id: Date.now() - 200, channelName: `${row.deviceName}-通道2`, channelId: row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) }
+      { 
+        id: Date.now() - 100, 
+        channelName: `${row.deviceName || '未命名设备'}-通道1`, 
+        channelId: row.deviceId ? row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) : '00000000000000000000'
+      },
+      { 
+        id: Date.now() - 200, 
+        channelName: `${row.deviceName || '未命名设备'}-通道2`, 
+        channelId: row.deviceId ? row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) : '00000000000000000000'
+      }
     ];
+  }
+
+  // 3. 调用表格实例方法，同步展开/折叠状态（关键）
+  if (gbTableRef.value) {
+    gbTableRef.value.toggleRowExpansion(row, row.expanded);
   }
 };
 
-// 2. 同步表格展开状态（与自定义图标对齐）
+// 2. 同步表格展开状态（不变）
 const handleDeviceExpand = (row, expanded) => {
-  row.expanded = expanded
-}
+  row.expanded = expanded;
+  if (expanded && (!row.channels || row.channels.length === 0)) {
+    row.channels = [
+      { 
+        id: Date.now() - 100, 
+        channelName: `${row.deviceName || '未命名设备'}-通道1`, 
+        channelId: row.deviceId ? row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) : '00000000000000000000'
+      },
+      { 
+        id: Date.now() - 200, 
+        channelName: `${row.deviceName || '未命名设备'}-通道2`, 
+        channelId: row.deviceId ? row.deviceId.slice(0, 10) + Math.random().toString().slice(2, 12) : '00000000000000000000'
+      }
+    ];
+  }
+};
 
 // 3. 打开添加通道弹窗
 const openAddChannelDialog = (device) => {
@@ -1131,46 +1213,130 @@ const openAddChannelDialog = (device) => {
 const openEditChannelDialog = (device, channel) => {
   currentDevice.value = device
   isEditChannel.value = true
-  channelForm.value = { ...channel }
+  // 精准赋值（与表单字段对齐）
+  channelForm.value = {
+    id: channel.id, // 通道ID（编辑时必传）
+    channelName: channel.channelName || '',
+    channelId: channel.channelId || ''
+  }
   channelDialogVisible.value = true
 }
 
 // 5. 提交通道（添加/编辑）
 const submitChannel = async () => {
+  // 校验前置条件
   if (!channelFormRef.value || !currentDevice.value) return
-  try {
-    await channelFormRef.value.validate()
-    const channelData = { ...channelForm.value }
 
-    if (isEditChannel.value) {
-      // 编辑通道：更新数组中的对应项
-      const index = currentDevice.value.channels.findIndex(c => c.id === channelData.id)
-      if (index !== -1) currentDevice.value.channels[index] = channelData
-      ElMessage.success('编辑通道成功')
-    } else {
-      // 添加通道：生成ID并添加到数组
-      channelData.id = Date.now()
-      currentDevice.value.channels.push(channelData)
-      ElMessage.success('添加通道成功')
+  try {
+    // 1. 表单验证
+    await channelFormRef.value.validate()
+
+    // 2. 构造通道请求参数（需与后端API字段对齐）
+    const channelParams = {
+      id: currentDevice.value.id, // 关联的设备ID（必传）
+      name: channelForm.value.channelName.trim(), // 通道名称
+      subject: channelForm.value.channelId.trim() // 通道ID（后端要求的唯一标识）
     }
-    channelDialogVisible.value = false
+
+    let res
+    if (isEditChannel.value) {
+      // 编辑通道：调用editGb28181Channel API
+      res = await editGb28181Channel(channelParams)
+    } else {
+      // 添加通道：调用addGb28181Channel API
+      res = await addGb28181Channel(channelParams)
+    }
+
+    // 3. API调用成功：同步前端数据+提示
+    if (res.code === 0) {
+      const successMsg = isEditChannel.value ? '编辑通道成功' : '添加通道成功'
+      ElMessage.success(successMsg)
+
+      // 关键：同步前端设备的channels数组（保证数据与后端一致）
+      const targetDevice = gbDeviceList.value.find(item => item.id === currentDevice.value.id)
+      if (targetDevice) {
+        if (isEditChannel.value) {
+          // 编辑：更新数组中对应通道
+          const channelIndex = targetDevice.channels.findIndex(c => c.id === channelForm.value.id)
+          if (channelIndex !== -1) {
+            targetDevice.channels[channelIndex] = {
+              id: channelForm.value.id, // 通道ID
+              channelName: channelParams.name, // 映射为表格需要的channelName
+              channelId: channelParams.subject, // 映射为表格需要的channelId
+              deviceId: currentDevice.value.id // 关联设备ID（可选）
+            }
+          }
+        } else {
+          // 添加：新增通道（优先用后端返回的通道数据，无则用表单数据）
+          const newChannel = res.data 
+            ? {
+                id: res.data.id || Date.now().toString(),
+                channelName: res.data.name || channelParams.name, // 映射字段
+                channelId: res.data.subject || channelParams.subject // 映射字段
+              }
+            : {
+                id: Date.now().toString(), // 临时ID
+                channelName: channelParams.name, // 映射为channelName
+                channelId: channelParams.subject // 映射为channelId
+              };
+          targetDevice.channels.push(newChannel)
+        }
+      }
+
+      // 强制表格重渲染（确保新增/编辑的通道显示）
+      tableKey.value++
+      //nextTick(() => gbTableRef.value?.doLayout())
+
+      // 关闭弹窗+重置表单
+      channelDialogVisible.value = false
+      channelForm.value = { id: '', channelName: '', channelId: '' }
+    } else {
+      // API返回错误（如参数校验失败）
+      ElMessage.error(res.msg || (isEditChannel.value ? '编辑通道失败' : '添加通道失败'))
+    }
   } catch (err) {
+    // 异常捕获（网络错误/表单验证失败）
     console.error('通道提交失败：', err)
-    return
-  }
+    ElMessage.error('操作失败，请检查网络或参数')
+  } 
 }
 
 // 6. 删除通道
 const deleteChannel = (device, channelId) => {
-  ElMessageBox.confirm('确定要删除该通道吗？', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    device.channels = device.channels.filter(c => c.id !== channelId)
-    ElMessage.success('删除成功')
+  ElMessageBox.confirm(
+    '确定要删除该通道吗？', 
+    '警告', 
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(async () => {
+    try {
+      // 1. 调用删除通道API
+      const res = await deleteGb28181Channel({
+        id: device.id, // 设备ID（后端关联）
+        subject: channelId // 要删除的通道ID
+      })
+
+      // 2. API成功：同步前端数据
+      if (res.code === 0) {
+        // 从前端数组中删除该通道
+        device.channels = device.channels.filter(c => c.id !== channelId)
+        ElMessage.success('删除通道成功')
+
+        // 强制表格重渲染
+        tableKey.value++
+        //nextTick(() => gbTableRef.value?.doLayout())
+      } else {
+        ElMessage.error(res.msg || '删除通道失败')
+      }
+    } catch (err) {
+      console.error('删除通道失败：', err)
+      ElMessage.error('删除失败，请检查网络')
+    }
   }).catch(() => {
-    // 取消删除
+    // 取消删除：无操作
   })
 }
 
@@ -1305,19 +1471,56 @@ const getGbDeviceList = async () => {
     // -------------------------- 步骤2：调用接口 --------------------------
     const res = await apiGetGb28181List(requestParams);
 
-    // -------------------------- 步骤3：处理接口响应 --------------------------
-    if (res.code === 0) {
-      // 核心：字段映射（后端字段 → 前端表格prop）
-      gbDeviceList.value = res.data.map(item => ({
-        id: item.id, // 设备ID（操作列用）
-        deviceName: item.name || '未命名设备', // 后端name → 前端deviceName（表格prop）
-        deviceId: item.contact ? item.contact.trim() : '无设备ID', // 后端contact → 前端deviceId（表格prop）
-        gatewayId: item.gw ? item.gw.trim() : '未绑定网关', // 后端gw → 前端gatewayId（表格prop）
-        status: item.status === 1 ? '在线' : '离线', // 数字状态转文字（0=离线，1=在线）
-        expanded: false, // 表格展开状态（前端自用）
-        channels: item.channels || [], // 通道列表（后端无返回则为空）
-        remark: item.remark || '' // 备注（兜底）
-      }));
+     if (res.code === 0) {
+      const mappedList = res.data.map(item => {
+        // 1. 从后端 conn_params.subjects 提取通道数据（核心修改）
+        const channels = [];
+        // 检查后端是否返回 conn_params 和 subjects（避免报错）
+        if (item.conn_params && item.conn_params.subjects) {
+          // 遍历 subjects：键=通道ID，值=通道名称
+          Object.entries(item.conn_params.subjects).forEach(([channelId, channelName]) => {
+            channels.push({
+              id: channelId, // 通道唯一ID（用后端返回的channelId）
+              channelName: channelName, // 通道名称（用后端返回的channelName）
+              channelId: channelId // 表格prop绑定的channelId（与列一致）
+            });
+          });
+        }
+
+    // 2. 设备字段映射（含通道数据）
+        return {
+          id: item.id, // 设备ID
+          deviceName: item.name || '未命名设备',
+          deviceId: item.contact ? item.contact.trim() : '无设备ID',
+          gatewayId: item.gw ? item.gw.trim() : '未绑定网关',
+          status: item.status === 1 ? '在线' : '离线',
+          expanded: false, // 初始折叠状态
+          channels: channels, // 从API提取的通道数据（不再模拟）
+          remark: item.remark || ''
+        };
+      });
+
+      // 2. 赋值响应式数据
+      gbDeviceList.value = mappedList;
+      console.log('GB28181数据：', gbDeviceList.value); // 验证：控制台应显示1条数据
+      
+       tableKey.value++;
+
+      // 3. 关键：数据更新后，强制表格刷新（解决未渲染问题）
+      // nextTick(() => {
+      //   try {
+      //     // 先判断表格实例存在，且有doLayout方法
+      //     if (gbTableRef.value && typeof gbTableRef.value.doLayout === 'function') {
+      //       gbTableRef.value.doLayout();
+      //       console.log('表格已强制刷新布局');
+      //     } else {
+      //       console.log('表格实例未就绪，无法调用doLayout');
+      //     }
+      //   } catch (err) {
+      //     // 捕获错误，避免中断后续代码
+      //     console.error('调用表格doLayout失败：', err);
+      //   }
+      // });
 
       // 分页信息必须从 _meta 提取，确保分页正确
       pagination.value = {
@@ -1916,41 +2119,64 @@ watch(h323SubTab, (newVal) => {
 </script>
 
 <style scoped>
-/* 1. 隐藏默认展开箭头 */
-:deep(.el-table__expand-column) {
-  padding: 0 !important;
-}
-:deep(.el-table__expand-column .cell) {
-  padding: 0 !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  height: 40px !important;
-}
-:deep(.el-table__expand-column .el-icon) {
-  display: none !important;
-}
-
-/* 2. 修复固定列样式 */
-:deep(.el-table__fixed-right) {
-  height: 100% !important;
-  box-shadow: none !important;
-}
-
-/* 3. 表格主体布局 */
-:deep(.el-table__body-wrapper) {
-  overflow-x: visible !important;
-}
-
-/* 自定义加号样式（不变） */
-.expand-icon {
-  width: 100% !important;
-  height: 100% !important;
+.device-name-wrap .expand-icon {
+  width: 16px !important;
+  height: 16px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  font-size: 16px !important;
   color: #409eff !important;
+  font-size: 14px !important;
+  /* 防止被其他样式隐藏 */
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 设备名称与图标间距 */
+.device-name-text {
+  margin-left: 8px; /* 确保图标和文字不重叠 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 确保表格行高度足够容纳图标 */
+:deep(.el-table__row) {
+  height: 48px !important; /* 避免行高过小导致图标被截断 */
+}
+
+/* 移除默认展开箭头 */
+:deep(.el-table__expand-icon) {
+  display: none !important;
+}
+
+/* 确保展开行内容正确显示 */
+:deep(.el-table__expanded-cell) {
+  padding: 20px !important;
+  background-color: #fafafa !important;
+  border-bottom: 1px solid #ebeef5;
+}
+
+/* 通道容器样式 */
+.channel-container {
+  background: white;
+  border-radius: 4px;
+  padding: 15px;
+}
+
+/* 修复固定列高度 */
+:deep(.el-table__fixed-right) {
+  height: 100% !important;
+}
+
+/* 表格行展开动画 */
+:deep(.el-table__row--expanded) {
+  background-color: #f9f9f9 !important;
+}
+
+/* 隐藏默认的展开列边框 */
+:deep(.el-table__expand-column) {
+  border-right: none !important;
 }
 </style>

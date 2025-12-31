@@ -226,11 +226,11 @@ export function deleteGb28181Device(id) {
 // GB28181通道
 
 export function addGb28181Channel(data) {
-  return request({ url: '/admin-api/agent/create', method: 'POST', data })
+  return request({ url: '/admin-api/agent/set-gb28181-subject', method: 'POST', data })
 }
 export function editGb28181Channel(data) {
-  return request({ url: '/admin-api/agent/update', method: 'POST', data })
+  return request({ url: '/admin-api/agent/set-gb28181-subject', method: 'POST', data })
 }
-export function deleteGb28181Channel (params) {
-  return request({ url: '/admin-api/agent/delete', method: 'POST', params })
+export function deleteGb28181Channel (data) {
+  return request({ url: '/admin-api/agent/del-gb28181-subject', method: 'POST', data })
 }
