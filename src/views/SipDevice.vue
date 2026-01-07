@@ -271,17 +271,15 @@
 
   <el-table-column prop="deviceName" label="设备名称" width="220"> 
     <template #default="scope">
-      <div class="device-name-wrap" style="display: flex; align-items: center;">
-        <!-- <div class="expand-icon" @click.stop="toggleExpand(scope.row)"> -->
-          <div 
-        class="expand-icon" 
-        @click.stop="toggleExpand(scope.row)"
-        :class="{ 'expanded': scope.row.expanded }"
-        aria-label="展开行"
-        :aria-expanded="scope.row.expanded"
-      >
-          <i class="el-icon-plus" v-if="!scope.row.expanded"></i>
-          <i class="el-icon-minus" v-else></i>
+      <div class="device-name-wrap" @click="toggleExpand(scope.row)">
+        <div 
+          class="expand-icon" 
+          :class="{ 'expanded': scope.row.expanded }"
+          aria-label="展开行"
+          :aria-expanded="scope.row.expanded"
+        >
+          <span class="expand-symbol" v-if="!scope.row.expanded">+</span>
+          <span class="expand-symbol" v-else>-</span>
         </div>
         <span class="device-name-text">{{ scope.row.deviceName || '未命名设备' }}</span>
       </div>
@@ -2130,23 +2128,31 @@ watch(h323SubTab, (newVal) => {
   align-items: center !important;
   width: 100% !important;
   overflow: visible !important; /* 允许图标超出文字区域（避免被截断） */
+  cursor: pointer !important;
 }
 
 /* 展开/折叠图标：增强可见性 */
 .expand-icon {
-  width: 20px !important;
-  height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
   display: inline-flex !important; /* 修复图标居中 */
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  color: #1989fa !important; /* 加深颜色，提高对比度 */
-  font-size: 16px !important; /* 放大图标，更易识别 */
-  font-weight: bold !important;
+  color: #333 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
   z-index: 999 !important; /* 确保图标在最上层，不被遮挡 */
-  margin-right: 6px !important; /* 与文字拉开距离，避免重叠 */
+  margin-right: 8px !important; /* 与文字拉开距离，避免重叠 */
+  background: #fff !important;
+  border: 1px solid #dcdfe6 !important;
+  border-radius: 2px !important;
   visibility: visible !important;
   opacity: 1 !important;
+}
+
+.expand-symbol {
+  line-height: 1 !important;
 }
 
 /* 设备名称与图标间距 */
