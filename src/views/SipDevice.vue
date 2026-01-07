@@ -1189,9 +1189,12 @@ const toggleExpand = (row) => {
 };
 
 // 2. 同步表格展开状态（不变）
-const handleDeviceExpand = (row, expanded) => {
-  row.expanded = expanded;
-  if (expanded && (!row.channels || row.channels.length === 0)) {
+const handleDeviceExpand = (row, expandedRows) => {
+  const isExpanded = Array.isArray(expandedRows)
+    ? expandedRows.some(item => item.id === row.id)
+    : !!expandedRows;
+  row.expanded = isExpanded;
+  if (isExpanded && (!row.channels || row.channels.length === 0)) {
     row.channels = [
       { 
         id: Date.now() - 100, 
