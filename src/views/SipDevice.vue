@@ -271,8 +271,15 @@
 
   <el-table-column prop="deviceName" label="设备名称" width="220"> 
     <template #default="scope">
-      <div class="device-name-wrap">
-        <div class="expand-icon" @click.stop="toggleExpand(scope.row)">
+      <div class="device-name-wrap" style="display: flex; align-items: center;">
+        <!-- <div class="expand-icon" @click.stop="toggleExpand(scope.row)"> -->
+          <div 
+        class="expand-icon" 
+        @click.stop="toggleExpand(scope.row)"
+        :class="{ 'expanded': scope.row.expanded }"
+        aria-label="展开行"
+        :aria-expanded="scope.row.expanded"
+      >
           <i class="el-icon-plus" v-if="!scope.row.expanded"></i>
           <i class="el-icon-minus" v-else></i>
         </div>
@@ -350,7 +357,6 @@
       <el-input 
         v-model="channelForm.channelId" 
         placeholder="自动生成通道id" 
-        readonly
       ></el-input>
     </el-col>
     <el-col :span="6">
@@ -415,7 +421,6 @@
               <el-input 
                 v-model="gbForm.deviceId" 
                 placeholder="请输入20位设备ID"
-                readonly
               ></el-input>
             </el-col>
             <el-col :span="6">
@@ -658,6 +663,7 @@ const statusOptions = ref([
 ])
 // 适配GB28181模拟数据的网关选项
 const gatewayOptions = ref([
+  { label: 'AS_001', value: 'AS_001' },
   { label: 'devgate-1', value: 'devgate-1' },
   { label: '网关1', value: 'gateway1' },
   { label: '网关2', value: 'gateway2' }
@@ -2119,36 +2125,54 @@ watch(h323SubTab, (newVal) => {
 </script>
 
 <style scoped>
-.device-name-wrap .expand-icon {
-  width: 16px !important;
-  height: 16px !important;
+.device-name-wrap {
   display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  overflow: visible !important; /* 允许图标超出文字区域（避免被截断） */
+}
+
+/* 展开/折叠图标：增强可见性 */
+.expand-icon {
+  width: 20px !important;
+  height: 20px !important;
+  display: inline-flex !important; /* 修复图标居中 */
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  color: #409eff !important;
-  font-size: 14px !important;
-  /* 防止被其他样式隐藏 */
+  color: #1989fa !important; /* 加深颜色，提高对比度 */
+  font-size: 16px !important; /* 放大图标，更易识别 */
+  font-weight: bold !important;
+  z-index: 999 !important; /* 确保图标在最上层，不被遮挡 */
+  margin-right: 6px !important; /* 与文字拉开距离，避免重叠 */
   visibility: visible !important;
   opacity: 1 !important;
 }
 
 /* 设备名称与图标间距 */
 .device-name-text {
-  margin-left: 8px; /* 确保图标和文字不重叠 */
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex: 1 !important; /* 文字占满剩余空间，图标固定位置 */
+}
+
+/* 修复表格单元格内边距，给图标留出空间 */
+:deep(.el-table__cell) {
+  padding: 12px 8px !important;
+  overflow: visible !important; /* 允许图标超出单元格默认范围 */
 }
 
 /* 确保表格行高度足够容纳图标 */
 :deep(.el-table__row) {
-  height: 48px !important; /* 避免行高过小导致图标被截断 */
+  height: 52px !important;
 }
 
-/* 移除默认展开箭头 */
+/* 隐藏Element Plus默认展开箭头（保持原逻辑，但确保不影响自定义图标） */
 :deep(.el-table__expand-icon) {
   display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* 确保展开行内容正确显示 */
@@ -2167,7 +2191,9 @@ watch(h323SubTab, (newVal) => {
 
 /* 修复固定列高度 */
 :deep(.el-table__fixed-right) {
-  height: 100% !important;
+  left: auto !important;
+  right: 0 !important;
+  z-index: 10 !important; /* 低于自定义图标的z-index（999） */
 }
 
 /* 表格行展开动画 */

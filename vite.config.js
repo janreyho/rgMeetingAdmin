@@ -63,7 +63,7 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/admin-api': {
-        target: 'https://39.107.250.156',
+        target: 'https://192.168.1.170',
         changeOrigin: true,
         agent: httpsAgent, // 导入证书验证
         ws: false
