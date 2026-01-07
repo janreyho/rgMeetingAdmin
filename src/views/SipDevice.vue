@@ -14,6 +14,7 @@
       v-if="currentProtocol === 'sip'" 
       v-model="currentSubTab" 
       type="border-card" 
+      class="sip-subtabs"
       style="margin-bottom: 20px;"
     >
       <el-tab-pane label="IP直连" name="ip-direct" />
@@ -24,6 +25,7 @@
       v-if="currentProtocol === 'h323'" 
       v-model="h323SubTab" 
       type="border-card" 
+      class="sip-subtabs"
       style="margin-bottom: 20px;"
     >
       <el-tab-pane label="IP直连" name="h323-ip-direct" />
@@ -35,12 +37,12 @@
     <div v-if="currentProtocol === 'sip'">
       <!-- SIP-IP直连 -->
       <div v-if="currentSubTab === 'ip-direct'">
-        <el-form :inline="true" :model="searchForm" class="mb-4">
-          <el-form-item label="搜索关键词">
+        <el-form :inline="true" :model="searchForm" class="mb-4 sip-search-form">
+          <el-form-item>
             <el-input v-model="searchForm.keyword" placeholder="请输入显示名称/IP地址搜索"></el-input>
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="searchForm.status" placeholder="请选择状态" style="width: 100px;">
+          <el-form-item>
+            <el-select v-model="searchForm.status" placeholder="请选择状态">
               <el-option label="全部" value="全部"></el-option>
               <el-option label="在线" value="在线"></el-option>
               <el-option label="离线" value="离线"></el-option>
@@ -51,7 +53,7 @@
             <el-button @click="resetSearch()">重置</el-button>
           </el-form-item>
         </el-form>
-        <el-button type="primary" @click="openAddDeviceDialog()">添加设备</el-button>
+        <el-button type="primary" class="sip-add-btn" @click="openAddDeviceDialog()">添加设备</el-button>
         <el-table :data="deviceList" border stripe style="width: 100%; margin-top: 10px">
           <el-table-column prop="name" label="显示名称"></el-table-column>
           <el-table-column prop="ipPort" label="IP地址和端口号"></el-table-column>
@@ -72,12 +74,12 @@
       </div>
       <!-- SIP-终端注册 -->
       <div v-else-if="currentSubTab === 'terminal-register'">
-        <el-form :inline="true" :model="accountSearchForm" class="mb-4">
-          <el-form-item label="搜索关键词">
+        <el-form :inline="true" :model="accountSearchForm" class="mb-4 sip-search-form">
+          <el-form-item>
             <el-input v-model="accountSearchForm.keyword" placeholder="请输入显示名称/用户名搜索"></el-input>
           </el-form-item>
-          <el-form-item label="状态">
-            <el-select v-model="accountSearchForm.status" placeholder="请选择状态" style="width: 100px;">
+          <el-form-item>
+            <el-select v-model="accountSearchForm.status" placeholder="请选择状态">
               <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
@@ -86,7 +88,7 @@
             <el-button @click="resetAccountSearch()">重置</el-button>
           </el-form-item>
         </el-form>
-        <el-button type="primary" @click="openAddAccountDialog()">添加账号</el-button>
+        <el-button type="primary" class="sip-add-btn" @click="openAddAccountDialog()">添加账号</el-button>
         <el-table :data="accountList" border stripe style="width: 100%; margin-top: 10px">
           <el-table-column prop="displayName" label="显示名称"></el-table-column>
           <el-table-column prop="username" label="用户名"></el-table-column>
@@ -2210,5 +2212,81 @@ watch(h323SubTab, (newVal) => {
 /* 隐藏默认的展开列边框 */
 :deep(.el-table__expand-column) {
   border-right: none !important;
+}
+
+/* SIP 子标签样式（仿截图：线条下划线） */
+.sip-subtabs {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+:deep(.sip-subtabs .el-tabs__header) {
+  border-bottom: 1px solid #ebeef5;
+  margin: 0 0 6px !important;
+}
+
+:deep(.sip-subtabs .el-tabs__nav-wrap::after) {
+  background-color: transparent !important;
+}
+
+:deep(.sip-subtabs .el-tabs__item) {
+  font-size: 14px;
+  color: #303133;
+  padding: 0 14px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+}
+
+:deep(.sip-subtabs .el-tabs__item.is-active) {
+  color: #409eff;
+}
+
+:deep(.sip-subtabs .el-tabs__active-bar) {
+  height: 3px;
+  border-radius: 0;
+}
+
+:deep(.sip-subtabs .el-tabs__content) {
+  padding-top: 0 !important;
+}
+
+/* SIP 搜索区仿截图 */
+.sip-search-form {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 6px !important;
+  margin-bottom: 16px !important;
+}
+
+:deep(.sip-search-form .el-form-item) {
+  margin-bottom: 0 !important;
+}
+
+:deep(.sip-search-form .el-input__wrapper) {
+  height: 38px;
+}
+
+:deep(.sip-search-form .el-input__inner) {
+  height: 38px;
+  font-size: 14px;
+}
+
+:deep(.sip-search-form .el-select) {
+  width: 180px;
+}
+
+:deep(.sip-search-form .el-button) {
+  height: 38px;
+  min-width: 96px;
+  font-size: 14px;
+  border-radius: 4px;
+}
+
+.sip-add-btn {
+  height: 38px !important;
+  min-width: 120px !important;
+  font-size: 14px !important;
+  margin: 10px 0 8px !important;
 }
 </style>
