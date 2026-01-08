@@ -676,6 +676,8 @@ const pagination = ref({
   total: 0
 })
 
+const normalizeList = (data) => (Array.isArray(data) ? data : [])
+
 // -------------------------- SIP-IP直连相关 --------------------------
 const searchForm = ref({ keyword: '', status: '全部' }) // 初始化status为“全部”
 const deviceList = ref([])
@@ -725,7 +727,7 @@ const getDeviceList = async () => {
     }
 
     // 3. 字段映射（res.data是后端返回的设备数组，item字段与后端完全匹配）
-    const formatDeviceList = res.data.map(item => ({
+    const formatDeviceList = normalizeList(res.data).map(item => ({
       id: item.id,                          // 后端item.id → 表格唯一标识
       name: item.name || '未命名设备',        // 后端item.name → 表格“显示名称”
       ipPort: item.contact || '无IP端口',    // 后端item.contact → 表格“IP地址和端口号”
@@ -806,7 +808,7 @@ const getAccountList = async () => {
     }
 
     // 4. 字段映射（适配响应数据，处理conn_params为null的情况）
-    accountList.value = res.data.map(item => ({
+    accountList.value = normalizeList(res.data).map(item => ({
       id: item.id, // 主键ID
       username: item.contact || '', // 账号（接口contact字段）
       displayName: item.name || '未命名账号', // 显示名称（接口name字段）
@@ -884,7 +886,7 @@ const getH323IpList = async () => {
     }
 
     // 2. 字段映射（适配H323响应数据结构）
-    h323IpList.value = res.data.map(item => ({
+    h323IpList.value = normalizeList(res.data).map(item => ({
       id: item.id, // 主键ID（操作列用）
       name: item.name || '未命名H323设备', // 设备名称（兜底）
       ipPort: item.contact || '无IP端口', // IP+端口（接口contact字段）
@@ -963,7 +965,7 @@ const getH323AccountList = async () => {
     }
 
     // 2. 字段映射（适配H323账号响应结构）
-    h323AccountList.value = res.data.map(item => ({
+    h323AccountList.value = normalizeList(res.data).map(item => ({
       id: item.id, // 主键ID（编辑/删除操作用）
       username: item.contact || '', // 账号（接口contact字段）
       displayName: item.name || '未命名H323账号', // 显示名称（兜底）
@@ -1045,7 +1047,7 @@ const getRtspList = async () => {
     }
 
     // 2. 字段映射（适配RTSP响应结构，处理边界值）
-    rtspList.value = res.data.map(item => ({
+    rtspList.value = normalizeList(res.data).map(item => ({
       id: item.id, // 主键ID（操作列用）
       displayName: item.name || '未命名RTSP设备', // 设备名称（兜底）
       streamUrl: item.contact || '无RTSP地址', // RTSP地址（接口contact字段）
@@ -1481,7 +1483,7 @@ const getGbDeviceList = async () => {
     const res = await apiGetGb28181List(requestParams);
 
      if (res.code === 0) {
-      const mappedList = res.data.map(item => {
+      const mappedList = normalizeList(res.data).map(item => {
         // 1. 从后端 conn_params.subjects 提取通道数据（核心修改）
         const channels = [];
         // 检查后端是否返回 conn_params 和 subjects（避免报错）
